@@ -184,10 +184,13 @@ Open http://localhost:5173, click **Use example**, then **Plan trip**.
 }
 ```
 
-Returns `route` (geometry, miles, avg mph), `stops` (typed, geo-located),
+It returns `route` (geometry, miles, avg mph), `stops` (typed, geo-located),
 `summary` (miles, drive hours, days, fuel stops, resets, breaks), and `logs`
 (per-day segments, totals, remarks). Each trip is also saved and retrievable at
 `GET /api/trips/<id>/`.
+
+`GET /api/geocode/suggest/?q=dal` returns US-city autocomplete suggestions
+(`[{label, lat, lon}]`) used by the Plan wizard's location fields.
 
 ---
 

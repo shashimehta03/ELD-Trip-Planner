@@ -13,9 +13,31 @@ import requests
 
 NOMINATIM_URL = "https://nominatim.openstreetmap.org/search"
 OSRM_URL = "https://router.project-osrm.org/route/v1/driving"
-HEADERS = {"User-Agent": "ELD-Trip-Planner/1.0 (assessment project)"}
+PHOTON_URL = "https://photon.komoot.io/api/"
+HEADERS = {"User-Agent": "TripPilot-AI/1.0 (assessment project)"}
+
+# US place types we treat as "cities" for autocomplete.
+US_PLACE_TYPES = {"city", "town", "village", "hamlet", "municipality"}
+# Full state name -> USPS abbreviation, for compact suggestion labels.
+US_STATES = {
+    "Alabama": "AL", "Alaska": "AK", "Arizona": "AZ", "Arkansas": "AR",
+    "California": "CA", "Colorado": "CO", "Connecticut": "CT", "Delaware": "DE",
+    "District of Columbia": "DC", "Florida": "FL", "Georgia": "GA",
+    "Hawaii": "HI", "Idaho": "ID", "Illinois": "IL", "Indiana": "IN",
+    "Iowa": "IA", "Kansas": "KS", "Kentucky": "KY", "Louisiana": "LA",
+    "Maine": "ME", "Maryland": "MD", "Massachusetts": "MA", "Michigan": "MI",
+    "Minnesota": "MN", "Mississippi": "MS", "Missouri": "MO", "Montana": "MT",
+    "Nebraska": "NE", "Nevada": "NV", "New Hampshire": "NH", "New Jersey": "NJ",
+    "New Mexico": "NM", "New York": "NY", "North Carolina": "NC",
+    "North Dakota": "ND", "Ohio": "OH", "Oklahoma": "OK", "Oregon": "OR",
+    "Pennsylvania": "PA", "Rhode Island": "RI", "South Carolina": "SC",
+    "South Dakota": "SD", "Tennessee": "TN", "Texas": "TX", "Utah": "UT",
+    "Vermont": "VT", "Virginia": "VA", "Washington": "WA",
+    "West Virginia": "WV", "Wisconsin": "WI", "Wyoming": "WY",
+}
 
 _geocode_cache = {}
+_suggest_cache = {}
 
 
 class GeoError(Exception):
@@ -48,6 +70,89 @@ def geocode(query):
     _geocode_cache[key] = result
     time.sleep(1)  # be polite to Nominatim (max 1 req/sec)
     return result
+
+
+def suggest_cities(query, limit=7):
+    """
+    Return up to `limit` US city suggestions for an autocomplete box.
+    Each item: {"label": "Dallas, TX", "lat": .., "lon": ..}.
+    Uses Photon (a fast OSM type-ahead geocoder) and falls back to Nominatim.
+    """
+    query = (query or "").strip()
+    if len(query) < 2:
+        return []
+    key = query.lower()
+    if key in _suggest_cache:
+        return _suggest_cache[key]
+
+    results = _suggest_photon(query, limit) or _suggest_nominatim(query, limit)
+    _suggest_cache[key] = results
+    return results
+
+
+def _suggest_photon(query, limit):
+    try:
+        resp = requests.get(
+            PHOTON_URL,
+            params={"q": query, "limit": limit * 3, "lang": "en"},
+            headers=HEADERS, timeout=8,
+        )
+        resp.raise_for_status()
+        feats = resp.json().get("features", [])
+    except (requests.RequestException, ValueError):
+        return []
+
+    out, seen = [], set()
+    for f in feats:
+        p = f.get("properties", {})
+        if p.get("countrycode") != "US":
+            continue
+        if p.get("osm_value") not in US_PLACE_TYPES:
+            continue
+        name = p.get("name")
+        state = p.get("state")
+        if not name or not state:
+            continue
+        label = f"{name}, {US_STATES.get(state, state)}"
+        if label in seen:
+            continue
+        seen.add(label)
+        lon, lat = f.get("geometry", {}).get("coordinates", [None, None])
+        out.append({"label": label, "lat": lat, "lon": lon})
+        if len(out) >= limit:
+            break
+    return out
+
+
+def _suggest_nominatim(query, limit):
+    try:
+        resp = requests.get(
+            NOMINATIM_URL,
+            params={"q": query, "format": "json", "addressdetails": 1,
+                    "countrycodes": "us", "limit": limit,
+                    "featuretype": "city"},
+            headers=HEADERS, timeout=10,
+        )
+        resp.raise_for_status()
+        data = resp.json()
+    except (requests.RequestException, ValueError):
+        return []
+
+    out, seen = [], set()
+    for hit in data:
+        addr = hit.get("address", {})
+        name = (addr.get("city") or addr.get("town") or addr.get("village")
+                or addr.get("hamlet") or addr.get("municipality"))
+        state = addr.get("state")
+        if not name or not state:
+            continue
+        label = f"{name}, {US_STATES.get(state, state)}"
+        if label in seen:
+            continue
+        seen.add(label)
+        out.append({"label": label, "lat": float(hit["lat"]),
+                    "lon": float(hit["lon"])})
+    return out
 
 
 def route(points):

@@ -4,8 +4,18 @@ from rest_framework import status
 
 from .serializers import TripInputSerializer
 from .services.planner import plan_trip
-from .services.geo import GeoError
+from .services.geo import GeoError, suggest_cities
 from .repository import get_repository
+
+
+@api_view(["GET"])
+def geocode_suggest(request):
+    """Autocomplete: return US city suggestions for `?q=`."""
+    query = request.query_params.get("q", "")
+    try:
+        return Response(suggest_cities(query))
+    except Exception:  # pragma: no cover - suggestions are best-effort
+        return Response([])
 
 
 @api_view(["GET"])

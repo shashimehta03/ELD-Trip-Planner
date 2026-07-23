@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { planTrip } from "../api";
 import { useTrip } from "../context/TripContext";
+import CityAutocomplete from "../components/CityAutocomplete";
 import {
   IconPin, IconNav, IconFlag, IconGauge, IconCheck, IconChevron, IconChevronLeft,
 } from "../components/icons";
@@ -87,20 +88,27 @@ export default function Plan() {
         {cur.key !== "review" ? (
           <div className="field" style={{ marginTop: 20 }}>
             <label>{cur.label}</label>
-            <div className="input-wrap">
-              {!cur.number && <span className="lead"><IconPin size={18} /></span>}
-              <input
-                className={"input" + (cur.number ? " plain" : "")}
-                type={cur.number ? "number" : "text"}
-                min={cur.number ? 0 : undefined} max={cur.number ? 70 : undefined}
-                step={cur.number ? 0.5 : undefined}
+            {cur.number ? (
+              <div className="input-wrap">
+                <input
+                  className="input plain"
+                  type="number" min={0} max={70} step={0.5}
+                  value={form[cur.key]}
+                  placeholder={cur.placeholder}
+                  onChange={(e) => setField(cur.key, e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && canContinue && setStep(step + 1)}
+                  autoFocus
+                />
+              </div>
+            ) : (
+              <CityAutocomplete
                 value={form[cur.key]}
+                onChange={(v) => setField(cur.key, v)}
+                onEnter={() => canContinue && setStep(step + 1)}
                 placeholder={cur.placeholder}
-                onChange={(e) => setField(cur.key, e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && canContinue && setStep(step + 1)}
                 autoFocus
               />
-            </div>
+            )}
           </div>
         ) : (
           <div style={{ marginTop: 16 }}>
