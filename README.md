@@ -2,6 +2,15 @@
 
 **TripPilot AI** — HOS Route Intelligence Platform.
 
+## 🔗 Live demo
+
+| | URL |
+|---|---|
+| **App (frontend)** | https://trip-pilot-ai-flax.vercel.app |
+| **Plan a trip** | https://trip-pilot-ai-flax.vercel.app/plan |
+| **API (backend)** | https://eld-trip-planner-rose-kappa.vercel.app |
+| **API health check** | https://eld-trip-planner-rose-kappa.vercel.app/api/health/ |
+
 A full-stack app that turns trip details into a **HOS-compliant route** and
 **drawn ELD daily-log sheets**. Enter a current location, pickup, drop-off, and
 the cycle hours already used; the app geocodes the stops, builds the driving
