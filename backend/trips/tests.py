@@ -65,3 +65,67 @@ class HosLimitTests(TestCase):
             total = sum(v for v in log["totals_min"].values())
             # each day's segments sum to <= 24h and the days are contiguous
             self.assertLessEqual(total, 24 * HOUR + 1)
+
+
+SAMPLE_DOC = {
+    "current_location": "Dallas, TX", "pickup_location": "Oklahoma City, OK",
+    "dropoff_location": "Denver, CO", "current_cycle_used_hours": 10,
+    "driver_name": "Shashi", "carrier_name": "DS",
+    "total_miles": 780.0, "total_drive_hours": 13.0, "num_days": 2,
+    "result": {"summary": {"total_miles": 780.0}, "logs": []},
+}
+
+
+class OrmRepositoryTests(TestCase):
+    """The SQLite fallback used when MongoDB is not configured."""
+
+    def setUp(self):
+        from .repository import reset_repository
+        reset_repository()
+
+    def test_fallback_when_no_uri(self):
+        from django.test import override_settings
+        from .repository import get_repository, OrmTripRepository
+        with override_settings(MONGODB_URI=""):
+            repo = get_repository()
+        self.assertIsInstance(repo, OrmTripRepository)
+
+    def test_roundtrip(self):
+        from .repository import OrmTripRepository
+        repo = OrmTripRepository()
+        tid = repo.save(dict(SAMPLE_DOC))
+        self.assertTrue(tid)
+        got = repo.get(tid)
+        self.assertEqual(got["trip_id"], tid)
+        listed = repo.list()
+        self.assertEqual(listed[0]["driver_name"], "Shashi")
+        self.assertIsNone(repo.get("999999"))
+
+
+class MongoRepositoryTests(TestCase):
+    """MongoTripRepository logic, exercised against an in-memory mongomock."""
+
+    def _repo(self):
+        import mongomock
+        from .repository import MongoTripRepository
+        return MongoTripRepository(mongomock.MongoClient())
+
+    def test_roundtrip(self):
+        repo = self._repo()
+        tid = repo.save(dict(SAMPLE_DOC))
+        self.assertTrue(tid)
+        got = repo.get(tid)
+        self.assertEqual(got["trip_id"], tid)
+        self.assertEqual(got["summary"]["total_miles"], 780.0)
+
+    def test_list_excludes_result_and_sorts(self):
+        repo = self._repo()
+        repo.save({**SAMPLE_DOC, "driver_name": "A"})
+        repo.save({**SAMPLE_DOC, "driver_name": "B"})
+        listed = repo.list()
+        self.assertEqual(len(listed), 2)
+        self.assertNotIn("result", listed[0])
+        self.assertIn("total_miles", listed[0])
+
+    def test_invalid_id_returns_none(self):
+        self.assertIsNone(self._repo().get("not-an-objectid"))

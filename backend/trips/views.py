@@ -2,16 +2,20 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
 
-from .models import Trip
-from .serializers import (
-    TripInputSerializer, TripSerializer, TripListSerializer)
+from .serializers import TripInputSerializer
 from .services.planner import plan_trip
 from .services.geo import GeoError
+from .repository import get_repository
 
 
 @api_view(["GET"])
 def health(request):
-    return Response({"status": "ok", "service": "eld-trip-planner"})
+    repo = get_repository()
+    return Response({
+        "status": "ok",
+        "service": "eld-trip-planner",
+        "storage": repo.backend,
+    })
 
 
 @api_view(["POST"])
@@ -39,37 +43,36 @@ def plan(request):
         return Response({"error": f"Unexpected error: {exc}"},
                         status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-    trip = Trip.objects.create(
-        current_location=result["inputs"]["current_location"],
-        pickup_location=result["inputs"]["pickup_location"],
-        dropoff_location=result["inputs"]["dropoff_location"],
-        current_cycle_used_hours=data["current_cycle_used_hours"],
-        driver_name=header.get("driver_name", ""),
-        co_driver_name=header.get("co_driver_name", ""),
-        carrier_name=header.get("carrier_name", ""),
-        main_office_address=header.get("main_office_address", ""),
-        truck_number=header.get("truck_number", ""),
-        trailer_number=header.get("trailer_number", ""),
-        total_miles=result["summary"]["total_miles"],
-        total_drive_hours=result["summary"]["total_drive_hours"],
-        num_days=result["summary"]["num_days"],
-        result=result,
-    )
-    result["trip_id"] = trip.id
+    doc = {
+        "current_location": result["inputs"]["current_location"],
+        "pickup_location": result["inputs"]["pickup_location"],
+        "dropoff_location": result["inputs"]["dropoff_location"],
+        "current_cycle_used_hours": data["current_cycle_used_hours"],
+        "driver_name": header.get("driver_name", ""),
+        "co_driver_name": header.get("co_driver_name", ""),
+        "carrier_name": header.get("carrier_name", ""),
+        "main_office_address": header.get("main_office_address", ""),
+        "truck_number": header.get("truck_number", ""),
+        "trailer_number": header.get("trailer_number", ""),
+        "total_miles": result["summary"]["total_miles"],
+        "total_drive_hours": result["summary"]["total_drive_hours"],
+        "num_days": result["summary"]["num_days"],
+        "result": result,
+    }
+    trip_id = get_repository().save(doc)
+    result["trip_id"] = trip_id
     return Response(result, status=status.HTTP_200_OK)
 
 
 @api_view(["GET"])
 def trip_detail(request, pk):
-    try:
-        trip = Trip.objects.get(pk=pk)
-    except Trip.DoesNotExist:
+    result = get_repository().get(pk)
+    if result is None:
         return Response({"error": "Trip not found"},
                         status=status.HTTP_404_NOT_FOUND)
-    return Response(trip.result)
+    return Response(result)
 
 
 @api_view(["GET"])
 def trip_list(request):
-    trips = Trip.objects.all()[:50]
-    return Response(TripListSerializer(trips, many=True).data)
+    return Response(get_repository().list(limit=50))

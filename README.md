@@ -7,6 +7,8 @@ route, runs an FMCSA Hours-of-Service scheduler, and renders one filled-out
 log sheet per day.
 
 - **Backend:** Django + Django REST Framework (the HOS engine + routing)
+- **Database:** MongoDB (via pymongo) for trip documents, with an automatic
+  SQLite fallback when Mongo isn't configured or reachable
 - **Frontend:** React (Vite) + React Router (multi-page dashboard) + Recharts
   (charts) + React-Leaflet (map), hand-drawn SVG ELD log grid
 - **Maps/Routing:** OpenStreetMap tiles, Nominatim geocoding, OSRM routing — all
@@ -118,11 +120,41 @@ cd backend
 python -m venv venv
 # Windows: venv\Scripts\activate   |   macOS/Linux: source venv/bin/activate
 pip install -r requirements.txt
-python manage.py migrate
+cp .env.example .env                 # then edit values (see below)
+python manage.py migrate             # sets up Django's internal SQLite tables
 python manage.py runserver           # http://localhost:8000
 ```
 
-Quick check: `GET http://localhost:8000/api/health/` → `{"status": "ok"}`.
+Quick check: `GET http://localhost:8000/api/health/` →
+`{"status": "ok", "storage": "mongodb"}` (or `"sqlite-orm"` on fallback).
+
+### Configuration (`.env`)
+
+Copy `.env.example` to `.env` and fill in the values:
+
+| Variable | Purpose |
+|----------|---------|
+| `DJANGO_SECRET_KEY` | Django secret (generate a random one for production) |
+| `DJANGO_DEBUG` | `True` / `False` |
+| `DJANGO_ALLOWED_HOSTS` | Comma-separated allowed hosts |
+| `CORS_ALLOW_ALL`, `CORS_ALLOWED_ORIGINS`, `CSRF_TRUSTED_ORIGINS` | CORS/CSRF |
+| `MONGODB_URI` | Mongo connection string (local or Atlas) |
+| `MONGODB_DB_NAME` / `MONGODB_COLLECTION` | Database + collection names |
+
+### Database (MongoDB)
+
+Each planned trip is stored as a single MongoDB document (inputs + the full
+computed result: route, timeline, charts, logs). Storage lives behind a small
+repository (`trips/repository.py`):
+
+- If `MONGODB_URI` is set **and** the server responds to a ping → **MongoDB**.
+- Otherwise → **SQLite** (Django ORM) automatically, so the app always runs.
+
+The `/api/health/` response reports which backend is active. To use Mongo
+locally, run one (`docker run -d -p 27017:27017 mongo`) or point `MONGODB_URI`
+at a free MongoDB Atlas cluster.
+
+The `.env` file is git-ignored; only `.env.example` is committed.
 
 ### 2. Frontend
 
@@ -166,7 +198,8 @@ rewrite.
 **Backend → Render (or Railway/Fly):** `render.yaml` and `build.sh` are
 included. Point the service at `backend/`; it runs migrations, collects static
 files, and serves via gunicorn + WhiteNoise. Set `CORS_ALLOWED_ORIGINS` to your
-Vercel URL (or leave `CORS_ALLOW_ALL=True` for the demo).
+Vercel URL (or leave `CORS_ALLOW_ALL=True` for the demo), and set `MONGODB_URI`
+to your MongoDB Atlas connection string in the dashboard (kept as a secret).
 
 ---
 
