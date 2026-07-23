@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState } from "react";
 
 const TripContext = createContext(null);
-const KEY = "spotter.activeTrip";
+const KEY = "trippilot.activeTrip";
 
 function load() {
   try {

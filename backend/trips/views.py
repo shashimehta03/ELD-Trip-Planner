@@ -13,7 +13,7 @@ def health(request):
     repo = get_repository()
     return Response({
         "status": "ok",
-        "service": "eld-trip-planner",
+        "service": "trippilot-ai",
         "storage": repo.backend,
     })
 

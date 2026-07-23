@@ -1,4 +1,4 @@
-"""Django settings for the ELD Trip Planner backend."""
+"""Django settings for the TripPilot AI backend."""
 
 import os
 from pathlib import Path

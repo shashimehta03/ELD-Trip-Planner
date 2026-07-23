@@ -38,7 +38,7 @@ export default function Home() {
     <div className="page">
       <section className="hero">
         <div>
-          <span className="chip"><span className="dot" /> Spotter.ai • FMCSA 70hr/8day</span>
+          <span className="chip"><span className="dot" /> TripPilot AI • FMCSA 70hr/8day</span>
           <h1>HOS Route Intelligence Platform</h1>
           <p>Plan FMCSA-compliant routes, generate ELD logs, and optimize long-haul operations.</p>
           <div className="hero-cta">

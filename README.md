@@ -1,4 +1,6 @@
-# ELD Trip Planner
+# TripPilot AI
+
+**TripPilot AI** — HOS Route Intelligence Platform.
 
 A full-stack app that turns trip details into a **HOS-compliant route** and
 **drawn ELD daily-log sheets**. Enter a current location, pickup, drop-off, and
@@ -14,7 +16,7 @@ log sheet per day.
 - **Maps/Routing:** OpenStreetMap tiles, Nominatim geocoding, OSRM routing — all
   free and key-less
 
-### Pages (Spotter.ai dashboard)
+### Pages (TripPilot AI dashboard)
 
 - **Home** — hero, six stat cards, and charts (driving hours by day, duty-status
   donut, cycle-usage donut, trip-progress area, fuel-stops bars).
@@ -97,7 +99,7 @@ eld-trip-planner/
     │   │   ├── Hos.jsx          # gauges + duty timeline
     │   │   └── Logs.jsx         # paginated ELD log sheets
     │   ├── components/
-    │   │   ├── Navbar.jsx       # Spotter nav
+    │   │   ├── Navbar.jsx       # TripPilot AI nav
     │   │   ├── RouteMap.jsx     # Leaflet map + stop markers
     │   │   ├── LogSheet.jsx     # SVG ELD grid (classic form)
     │   │   ├── Gauge.jsx        # SVG ring gauge

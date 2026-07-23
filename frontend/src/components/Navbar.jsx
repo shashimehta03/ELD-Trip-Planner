@@ -19,7 +19,7 @@ function initials(trip) {
   if (name) {
     return name.trim().split(/\s+/).map((w) => w[0]).join("").slice(0, 2).toUpperCase();
   }
-  return "SP";
+  return "TP";
 }
 
 export default function Navbar() {
@@ -29,7 +29,7 @@ export default function Navbar() {
       <div className="nav-inner">
         <div className="brand">
           <span className="brand-dots"><i /><i /><i /><i /></span>
-          spotter
+          TripPilot <span style={{ color: "var(--mint)", marginLeft: 4 }}>AI</span>
         </div>
         <div className="nav-pills">
           {LINKS.map(({ to, label, icon: Icon, end }) => (
