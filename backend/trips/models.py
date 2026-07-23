@@ -8,6 +8,14 @@ class Trip(models.Model):
     dropoff_location = models.CharField(max_length=255)
     current_cycle_used_hours = models.FloatField(default=0)
 
+    # Optional log-header info
+    driver_name = models.CharField(max_length=120, blank=True, default="")
+    co_driver_name = models.CharField(max_length=120, blank=True, default="")
+    carrier_name = models.CharField(max_length=160, blank=True, default="")
+    main_office_address = models.CharField(max_length=255, blank=True, default="")
+    truck_number = models.CharField(max_length=60, blank=True, default="")
+    trailer_number = models.CharField(max_length=60, blank=True, default="")
+
     total_miles = models.FloatField(null=True, blank=True)
     total_drive_hours = models.FloatField(null=True, blank=True)
     num_days = models.IntegerField(null=True, blank=True)

@@ -7,9 +7,25 @@ route, runs an FMCSA Hours-of-Service scheduler, and renders one filled-out
 log sheet per day.
 
 - **Backend:** Django + Django REST Framework (the HOS engine + routing)
-- **Frontend:** React (Vite) + React-Leaflet for the map, hand-drawn SVG log grid
+- **Frontend:** React (Vite) + React Router (multi-page dashboard) + Recharts
+  (charts) + React-Leaflet (map), hand-drawn SVG ELD log grid
 - **Maps/Routing:** OpenStreetMap tiles, Nominatim geocoding, OSRM routing — all
   free and key-less
+
+### Pages (Spotter.ai dashboard)
+
+- **Home** — hero, six stat cards, and charts (driving hours by day, duty-status
+  donut, cycle-usage donut, trip-progress area, fuel-stops bars).
+- **Trips** — every saved trip from the database; click one to load it.
+- **Plan** — five-step wizard (current / pickup / dropoff / cycle hours /
+  review) with optional log-header fields (driver, carrier, truck, trailer…).
+- **Route** — Leaflet map with typed stop markers + a stop-by-stop route timeline.
+- **HOS** — ring gauges (14 h window, 11 h drive, 70 h cycle, remaining), status
+  cards, and the duty-status timeline.
+- **Logs** — paginated FMCSA daily-log sheets (zoom / print) + trip summary.
+
+The active trip is held in a React context and persisted to `localStorage`, so
+it stays loaded as you move between pages.
 
 ---
 
@@ -69,16 +85,26 @@ eld-trip-planner/
 │   │   └── tests.py         # HOS unit tests
 │   ├── requirements.txt
 │   ├── Procfile / render.yaml / build.sh
-└── frontend/                # React (Vite)
+└── frontend/                # React (Vite) + React Router
     ├── src/
+    │   ├── pages/
+    │   │   ├── Home.jsx         # hero, stat cards, charts
+    │   │   ├── Trips.jsx        # saved trips grid
+    │   │   ├── Plan.jsx         # 5-step wizard
+    │   │   ├── RouteAnalysis.jsx# map + route timeline
+    │   │   ├── Hos.jsx          # gauges + duty timeline
+    │   │   └── Logs.jsx         # paginated ELD log sheets
     │   ├── components/
-    │   │   ├── TripForm.jsx
+    │   │   ├── Navbar.jsx       # Spotter nav
     │   │   ├── RouteMap.jsx     # Leaflet map + stop markers
-    │   │   ├── LogSheet.jsx     # SVG ELD grid
-    │   │   └── TripSummary.jsx
+    │   │   ├── LogSheet.jsx     # SVG ELD grid (classic form)
+    │   │   ├── Gauge.jsx        # SVG ring gauge
+    │   │   ├── Timeline.jsx     # duty-status timeline
+    │   │   └── icons.jsx        # inline SVG icons
+    │   ├── context/TripContext.jsx  # active trip + localStorage
     │   ├── api.js
-    │   └── App.jsx
-    └── vercel.json
+    │   └── App.jsx             # routes
+    └── vercel.json            # SPA rewrite (React Router)
 ```
 
 ---

@@ -3,7 +3,8 @@ from rest_framework.response import Response
 from rest_framework import status
 
 from .models import Trip
-from .serializers import TripInputSerializer, TripSerializer
+from .serializers import (
+    TripInputSerializer, TripSerializer, TripListSerializer)
 from .services.planner import plan_trip
 from .services.geo import GeoError
 
@@ -21,6 +22,7 @@ def plan(request):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     data = serializer.validated_data
+    header = dict(data.get("log_header") or {})
     try:
         result = plan_trip(
             current=data["current_location"],
@@ -28,6 +30,7 @@ def plan(request):
             dropoff=data["dropoff_location"],
             cycle_used_hours=data["current_cycle_used_hours"],
             start_dt=data.get("start_datetime"),
+            log_header=header,
         )
     except GeoError as exc:
         return Response({"error": str(exc)},
@@ -41,6 +44,12 @@ def plan(request):
         pickup_location=result["inputs"]["pickup_location"],
         dropoff_location=result["inputs"]["dropoff_location"],
         current_cycle_used_hours=data["current_cycle_used_hours"],
+        driver_name=header.get("driver_name", ""),
+        co_driver_name=header.get("co_driver_name", ""),
+        carrier_name=header.get("carrier_name", ""),
+        main_office_address=header.get("main_office_address", ""),
+        truck_number=header.get("truck_number", ""),
+        trailer_number=header.get("trailer_number", ""),
         total_miles=result["summary"]["total_miles"],
         total_drive_hours=result["summary"]["total_drive_hours"],
         num_days=result["summary"]["num_days"],
@@ -62,5 +71,5 @@ def trip_detail(request, pk):
 
 @api_view(["GET"])
 def trip_list(request):
-    trips = Trip.objects.all()[:25]
-    return Response(TripSerializer(trips, many=True).data)
+    trips = Trip.objects.all()[:50]
+    return Response(TripListSerializer(trips, many=True).data)
