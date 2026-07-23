@@ -167,24 +167,125 @@ export default function Home() {
   );
 }
 
+function Wheel({ cx, cy, r = 17 }) {
+  return (
+    <g className="tp-wheel">
+      {/* modern low-profile alloy */}
+      <circle cx={cx} cy={cy} r={r} fill="#0b1220" stroke="#0f2033" strokeWidth="3" />
+      <circle cx={cx} cy={cy} r={r - 4} fill="none" stroke="#1e3350" strokeWidth="2" />
+      <circle cx={cx} cy={cy} r={r - 8} fill="#152740" />
+      {[0, 72, 144, 216, 288].map((a) => (
+        <path key={a} d={`M${cx} ${cy} L${cx - 2.4} ${cy - (r - 7)} h4.8 z`}
+          fill="#38bdf8" opacity="0.85"
+          transform={`rotate(${a} ${cx} ${cy})`} />
+      ))}
+      <circle cx={cx} cy={cy} r="3.2" fill="#7dd3fc" />
+    </g>
+  );
+}
+
+function City({ dx = 0 }) {
+  const bars = [10, 60, 105, 150, 205, 260, 300, 350, 400];
+  return (
+    <g transform={`translate(${dx} 0)`}>
+      {bars.map((x, i) => (
+        <rect key={i} x={x} y={120 - (i % 4) * 16} width="38"
+          height={130 + (i % 4) * 16} rx="6" fill="#12263f" opacity="0.7" />
+      ))}
+    </g>
+  );
+}
+
 function TruckArt() {
   return (
-    <svg viewBox="0 0 420 300" width="90%" style={{ maxWidth: 460 }}>
-      <rect width="420" height="300" fill="none" />
-      {[40, 90, 150, 210, 260, 320, 370].map((x, i) => (
-        <rect key={i} x={x} y={90 - (i % 3) * 18} width="34" height={140 + (i % 3) * 18}
-          fill="#12263f" opacity="0.8" />
-      ))}
-      <rect x="30" y="210" width="240" height="60" rx="6" fill="#0e7490" />
-      <rect x="30" y="200" width="240" height="14" fill="#155e75" />
-      <circle cx="80" cy="272" r="18" fill="#0f172a" stroke="#334155" strokeWidth="4" />
-      <circle cx="130" cy="272" r="18" fill="#0f172a" stroke="#334155" strokeWidth="4" />
-      <rect x="285" y="150" width="120" height="120" rx="8" fill="#e2e8f0" />
-      <rect x="295" y="162" width="100" height="10" rx="3" fill="#94a3b8" />
-      <rect x="295" y="182" width="70" height="8" rx="3" fill="#cbd5e1" />
-      <rect x="295" y="198" width="90" height="8" rx="3" fill="#cbd5e1" />
-      <circle cx="360" cy="235" r="20" fill="#0e7490" />
-      <rect x="352" y="225" width="16" height="22" rx="3" fill="#e2e8f0" />
+    <svg className="tp-scene" viewBox="0 0 460 300" role="img"
+      aria-label="Animated electric semi truck carrying a load">
+      <defs>
+        <linearGradient id="cab" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#e8f4fb" />
+          <stop offset="52%" stopColor="#9fb8cc" />
+          <stop offset="100%" stopColor="#54708a" />
+        </linearGradient>
+        <linearGradient id="trailer" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#dbe7f1" />
+          <stop offset="55%" stopColor="#9caec1" />
+          <stop offset="100%" stopColor="#5c7288" />
+        </linearGradient>
+        <linearGradient id="glass" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stopColor="#1a3a52" />
+          <stop offset="100%" stopColor="#0a1826" />
+        </linearGradient>
+        <radialGradient id="under" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor="#38bdf8" stopOpacity="0.9" />
+          <stop offset="100%" stopColor="#38bdf8" stopOpacity="0" />
+        </radialGradient>
+        <filter id="soft"><feGaussianBlur stdDeviation="6" /></filter>
+        <clipPath id="scene"><rect x="0" y="0" width="460" height="300" /></clipPath>
+      </defs>
+
+      <g clipPath="url(#scene)">
+        {/* Parallax city */}
+        <g className="tp-city"><City dx={0} /><City dx={460} /></g>
+
+        {/* Ground + neon horizon line */}
+        <rect x="0" y="252" width="460" height="48" fill="#0a1526" />
+        <rect x="0" y="251" width="460" height="2" fill="#1f4c6b" opacity="0.9" />
+
+        {/* Moving lane dashes */}
+        <g className="tp-road">
+          {Array.from({ length: 16 }).map((_, i) => (
+            <rect key={i} x={-40 + i * 40} y="286" width="22" height="4" rx="2"
+              fill="#2b4a63" />
+          ))}
+        </g>
+
+        {/* Speed streaks behind the truck */}
+        <g>
+          {[190, 205, 222].map((y, i) => (
+            <rect key={y} className="tp-streak" x="70" y={y} width="60" height="3"
+              rx="1.5" fill="#38bdf8" style={{ animationDelay: `${i * 0.35}s` }} />
+          ))}
+        </g>
+
+        {/* Neon underglow */}
+        <ellipse className="tp-glow" cx="250" cy="250" rx="150" ry="18"
+          fill="url(#under)" filter="url(#soft)" />
+
+        {/* Truck */}
+        <g className="tp-truck">
+          {/* Trailer body (glossy) */}
+          <rect x="96" y="150" width="212" height="92" rx="14" fill="url(#trailer)" />
+          <rect x="104" y="158" width="196" height="10" rx="5" fill="#ffffff" opacity="0.5" />
+          {/* accent light strip */}
+          <rect className="tp-lightbar" x="104" y="226" width="196" height="4" rx="2" fill="#38bdf8" />
+          {/* brand mark on the load */}
+          <g opacity="0.92">
+            <circle cx="150" cy="196" r="17" fill="#0e7490" />
+            <path d="M143 196 h14 M150 189 v14" stroke="#e8f4fb" strokeWidth="3" strokeLinecap="round" />
+          </g>
+          <text x="188" y="202" fontSize="17" fontWeight="800" fill="#33506b"
+            fontFamily="Inter, sans-serif" letterSpacing="0.5">CARGO</text>
+
+          {/* Aerodynamic cab */}
+          <path d="M308 242 V172 q0 -14 14 -16 l30 -4 q10 -1 16 8 l24 34 q4 6 4 14 v34 z"
+            fill="url(#cab)" />
+          {/* wraparound windshield */}
+          <path d="M356 156 q9 -1 15 7 l20 30 h-34 q-6 0 -6 -6 V162 q0 -5 5 -6 z"
+            fill="url(#glass)" />
+          <path d="M357 158 l14 4 l16 26" fill="none" stroke="#7dd3fc" strokeWidth="1.5" opacity="0.6" />
+          {/* lower skirt */}
+          <rect x="308" y="232" width="94" height="10" rx="3" fill="#243b52" />
+          {/* headlight bar */}
+          <rect className="tp-headlight" x="396" y="210" width="8" height="14" rx="3" fill="#e0f2fe" />
+          <path className="tp-headlight" d="M404 210 l30 -8 v30 l-30 -6 z" fill="#bae6fd" opacity="0.3" />
+
+          {/* Wheels */}
+          <Wheel cx="150" cy="244" />
+          <Wheel cx="214" cy="244" />
+          <Wheel cx="286" cy="244" />
+          <Wheel cx="366" cy="244" />
+        </g>
+      </g>
     </svg>
   );
 }
